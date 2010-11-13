@@ -41,14 +41,16 @@ class    (TypeNat n, 1 :<= n, n :<= MaxIx) => IxNat n
 instance (TypeNat n, 1 :<= n, n :<= MaxIx) => IxNat n
 
 -- private
-natRep :: Nat n -> IxRep
+natRep :: Num a => Nat n -> a
 natRep n  = fromInteger (natToInteger n)
 
 instance IxNat n => Bounded (Ix n) where
+  {-# INLINE minBound #-}
   minBound    = Ix 0
+  {-# INLINE maxBound #-}
   maxBound    = mk nat
     where mk :: Nat n -> Ix n
-          mk n = Ix (natRep n)
+          mk n = Ix (natRep n - 1)
 
 instance Show (Ix n) where
   showsPrec p (Ix n)  = showsPrec p n
@@ -85,8 +87,15 @@ instance IxNat n => Enum (Ix n) where
   fromEnum (Ix n) = fromEnum n
   toEnum i        = mk nat
     where mk :: Nat n -> Ix n
-          mk n    = Ix (toEnum (mod i (fromInteger (natToInteger n))))
+          mk = Ix . toEnum . mod i . natRep
 
+  pred a@(Ix x) = if a == minBound then maxBound else Ix (pred x)
+  succ a@(Ix x) = if a == maxBound then minBound else Ix (succ x)
+
+  enumFrom x                          = enumFromTo x maxBound
+  enumFromTo (Ix x) (Ix y)            = map Ix (enumFromTo x y)
+  enumFromThen x y                    = enumFromThenTo x y maxBound
+  enumFromThenTo (Ix x) (Ix y) (Ix z) = map Ix (enumFromThenTo x y z)
 
 
 
