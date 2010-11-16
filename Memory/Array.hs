@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeNaturals, KindSignatures #-}
+{-# LANGUAGE Rank2Types, ExistentialQuantification #-}
 module Memory.Array
   ( Array
   , foreignArray
@@ -23,6 +24,9 @@ import qualified Foreign.Marshal.Array as F
 
 
 newtype Array (n :: Nat) a = MA (Ptr a)
+
+arraySize            :: TypeNat n => Array n a -> Nat n
+arraySize _           = nat
 
 foreignArray         :: Ptr a -> Array n a
 foreignArray          = MA
@@ -50,6 +54,10 @@ peekArray             = mk nat
   where mk :: Storable a => Nat n -> Array n a -> IO [a]
         mk n (MA p)   = F.peekArray (natInt n) p
 
+pokeArray            :: (TypeNat n, Storable a) => Array n a -> [a] -> IO ()
+pokeArray a@(MA p) xs   = F.pokeArray p (take (natInt (arraySize a)) xs)
+
+
 
 copyArray            :: (x :<= m, x :<= n, Storable a)
                      => Array m a -> Array n a -> Nat x -> IO ()
@@ -60,9 +68,45 @@ moveArray            :: (x :<= m, x :<= n, Storable a)
 moveArray (MA to) (MA from) i = F.moveArray to from (natInt i)
 
 
+withArray            :: Storable a
+                     => [a] -> (forall n. Array n a -> IO b) -> IO b
+withArray as k        = F.withArray as (\p -> k (MA p))
+
+withArrayLen         :: Storable a
+                     => [a] -> (forall n. Nat n -> Array n a -> IO b) -> IO b
+withArrayLen as k     = F.withArrayLen as (\n p ->
+                          intNat n (\n1 -> k n1 (MA p))) 
+
+--------------------------------------------------------------------------------
+-- Array pointers packaged with the array size.
+
+data SizedArray a      = forall n. SA (Nat n) (Array n a)
+
+sizedArraySize       :: SizedArray n -> Integer
+sizedArraySize (SA n _) = natToInteger n
+
+-- XXX: It's a pity that newArray does not give us the length of the array.
+-- It must have compute it to allocate the array in the first place.
+newArray             :: Storable a => [a] -> IO (SizedArray a)
+newArray xs           = do p <- F.newArray xs
+                           return (intNat (length xs) (\n -> SA n (MA p)))
+
+
+
+arrayToSizedArray    :: TypeNat n => Array n a -> SizedArray a
+arrayToSizedArray a   = SA (arraySize a) a
+
+sizedArrayToArray    :: SizedArray a -> (forall n. Nat n -> Array n a -> b) -> b
+sizedArrayToArray (SA s a) k = k s a
+
+
+--------------------------------------------------------------------------------
 
 natInt               :: Nat n -> Int
 natInt x              = fromIntegral (natToInteger x)
+
+intNat               :: Int -> (forall n. Nat n -> a) -> a
+intNat x k            = integerToNat (toEnum x) k
 
 
 {-
@@ -70,13 +114,9 @@ natInt x              = fromIntegral (natToInteger x)
 reallocArray :: Storable a => Ptr a -> Int -> IO (Ptr a)
 reallocArray0 :: Storable a => Ptr a -> Int -> IO (Ptr a)
 peekArray0 :: (Storable a, Eq a) => a -> Ptr a -> IO [a]
-pokeArray :: Storable a => Ptr a -> [a] -> IO ()
 pokeArray0 :: Storable a => a -> Ptr a -> [a] -> IO ()
-newArray :: Storable a => [a] -> IO (Ptr a)
 newArray0 :: Storable a => a -> [a] -> IO (Ptr a)
-withArray :: Storable a => [a] -> (Ptr a -> IO b) -> IO b
 withArray0 :: Storable a => a -> [a] -> (Ptr a -> IO b) -> IO b
-withArrayLen :: Storable a => [a] -> (Int -> Ptr a -> IO b) -> IO b
 withArrayLen0 :: Storable a => a -> [a] -> (Int -> Ptr a -> IO b) -> IO b
 lengthArray0 :: (Storable a, Eq a) => a -> Ptr a -> IO Int
 advancePtr :: Storable a => Ptr a -> Int -> Ptr a
@@ -84,4 +124,3 @@ advancePtr :: Storable a => Ptr a -> Int -> Ptr a
 -- i.e. drop
 advancePtr :: (Storable a) => Array (m + n) a -> Nat m -> Array n a
 -}
-
