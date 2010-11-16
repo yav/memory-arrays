@@ -2,6 +2,7 @@
 {-# LANGUAGE Rank2Types, ExistentialQuantification #-}
 module Memory.Array
   ( Array
+  , arraySize
   , foreignArray
   , mallocArray
   , mallocArray0
@@ -10,8 +11,18 @@ module Memory.Array
   , peekAt
   , pokeAt
   , peekArray
+  , pokeArray
   , copyArray
   , moveArray
+  , withArray
+  , withArrayLen
+
+  , SizedArray
+  , sizedArraySize
+  , newArray
+
+  , arrayToSizedArray
+  , sizedArrayToArray
   , module Memory.Ix
   ) where
 
