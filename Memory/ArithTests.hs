@@ -63,7 +63,8 @@ subSame x         = (x .- x) .== zero
 divUnitR         :: TypeNat a => Nat a -> ()
 divUnitR x        = (x ./ one)  .== x
 
-zeroLeast x       = x .<= zero
+zeroLeast         :: (a :<= 0) => Nat a -> ()
+zeroLeast x       = x .== zero
 
 
 -- These do not work:
