@@ -18,53 +18,43 @@ _ ./ _ = nat
 (.==) :: Nat a -> Nat a -> ()
 _ .== _ = ()
 
-(.<=) :: (a :<= b) => Nat a -> Nat b -> ()
-_ .<= _ = ()
 
 zero :: Nat 0
 zero = nat
 
-one :: Nat 1
-one = nat
 
 
 -- These work:
 
-addCommutes      :: TypeNat (a :+ b) => Nat a -> Nat b -> ()
-addCommutes x y   = (x .+ y) .== (y .+ x)
+addCommutes      :: Nat (x :+ y) -> Nat (y :+ x)
+addCommutes       = id
 
-addUnitL         :: TypeNat a => Nat a -> ()
-addUnitL x        = (x .+ zero) .== x
+addUnit          :: Nat (0 :+ x) -> Nat x
+addUnit           = id
 
-addUnitR         :: TypeNat a => Nat a -> ()
-addUnitR x        = (zero .+ x) .== x
+mulCommutes      ::  Nat (x :* y) -> Nat (y :* x)
+mulCommutes       = id
 
-mulCommutes      :: TypeNat (a :* b) => Nat a -> Nat b -> ()
-mulCommutes x y   = (x .* y) .== (y .* x)
+mulUnit          :: Nat (1 :* x) -> Nat x
+mulUnit           = id
 
-mulUnitL         :: TypeNat a => Nat a -> ()
-mulUnitL x        = (x .* one) .== x
-
-mulUnitR         :: TypeNat a => Nat a -> ()
-mulUnitR x        = (one .* x) .== x
-
-mulZeroAnihL     :: Nat a -> ()
-mulZeroAnihL x    = (zero .* x) .== zero
-
-mulZeroAnihR     :: Nat a -> ()
-mulZeroAnihR x    = (x .* zero) .== zero
-
-subUnitR         :: TypeNat a => Nat a -> ()
-subUnitR x        = (x .- zero) .== x
+mulZeroAnihL     :: Nat (0 :* x) -> Nat 0
+mulZeroAnihL      = id
 
 subSame          :: Nat a -> ()
 subSame x         = (x .- x) .== zero
 
-divUnitR         :: TypeNat a => Nat a -> ()
-divUnitR x        = (x ./ one)  .== x
+zeroLeast        :: (a :<= 0) => Nat a -> Nat 0
+zeroLeast         = id
 
-zeroLeast         :: (a :<= 0) => Nat a -> ()
-zeroLeast x       = x .== zero
+times2           :: Nat (2 :* x) -> Nat (x :+ x)
+times2            = id
+
+-- Reports an error
+-- times2Odd     :: Nat (x :+ x) -> Nat 5
+-- times2Odd      = id
+
+
 
 
 -- These do not work:
@@ -72,7 +62,8 @@ zeroLeast x       = x .== zero
 -- This should get a better type when we add the "a + b = 0" rule.
 zeroMinus x       = zero .- x
 
-timesPlus x       = (nat :: Nat 2) .* x .== (x .+ x)
+times3 x          = (nat :: Nat 3) .* x .== (x .+ x .+ x)
+
 
 plusAssoc x y z   = ((x .+ y) .+ z) .== (x .+ (y .+ z))
 timesAssoc x y z  = ((x .* y) .* z) .== (x .* (y .* z))
