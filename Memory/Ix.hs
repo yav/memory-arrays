@@ -32,13 +32,13 @@ fromIx (Ix n) = fromIntegral n
 (<=?) :: IxRep -> Ix n -> Maybe (Ix n)
 x <=? Ix y  = if x <= y then Just (Ix x) else Nothing
 
-cast :: (m :<= n) => Ix m -> Ix n
+cast :: (m <= n) => Ix m -> Ix n
 cast (Ix m) = Ix m
 
 
 -- | Type level naturals for non-empty Ix types.
-class    (TypeNat n, 1 :<= n, n :<= MaxIx) => IxNat n
-instance (TypeNat n, 1 :<= n, n :<= MaxIx) => IxNat n
+class    (TypeNat n, 1 <= n, n <= MaxIx) => IxNat n
+instance (TypeNat n, 1 <= n, n <= MaxIx) => IxNat n
 
 -- private
 natRep :: Num a => Nat n -> a

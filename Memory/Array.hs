@@ -70,11 +70,11 @@ pokeArray a@(MA p) xs   = F.pokeArray p (take (natInt (arraySize a)) xs)
 
 
 
-copyArray            :: (x :<= m, x :<= n, Storable a)
+copyArray            :: (x <= m, x <= n, Storable a)
                      => Array m a -> Array n a -> Nat x -> IO ()
 copyArray (MA to) (MA from) i = F.copyArray to from (natInt i)
 
-moveArray            :: (x :<= m, x :<= n, Storable a)
+moveArray            :: (x <= m, x <= n, Storable a)
                      => Array m a -> Array n a -> Nat x -> IO ()
 moveArray (MA to) (MA from) i = F.moveArray to from (natInt i)
 

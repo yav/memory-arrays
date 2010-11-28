@@ -1,74 +1,56 @@
-{-# LANGUAGE TypeNaturals, TypeOperators, FlexibleContexts #-}
+{-# LANGUAGE TypeNaturals, TypeOperators, FlexibleContexts, TypeFamilies #-}
 
 import GHC.TypeNats
 
 
-(.+) :: TypeNat (a :+ b) => Nat a -> Nat b -> Nat (a :+ b)
-_ .+ _ = nat
-
-(.-) :: TypeNat b => Nat (a :+ b) -> Nat a -> Nat b
-_ .- _ = nat
-
-(.*) :: TypeNat (a :* b) => Nat a -> Nat b -> Nat (a :* b)
-_ .* _ = nat
-
-(./) :: TypeNat b => Nat (a :* b) -> Nat a -> Nat b
-_ ./ _ = nat
-
-(.==) :: Nat a -> Nat a -> ()
-_ .== _ = ()
-
-
-zero :: Nat 0
-zero = nat
-
-
-
 -- These work:
 
-addCommutes      :: Nat (x :+ y) -> Nat (y :+ x)
+addCommutes      :: Nat (x + y) -> Nat (y + x)
 addCommutes       = id
 
-addUnit          :: Nat (0 :+ x) -> Nat x
+addUnit          :: Nat (0 + x) -> Nat x
 addUnit           = id
 
-mulCommutes      ::  Nat (x :* y) -> Nat (y :* x)
+mulCommutes      ::  Nat (x * y) -> Nat (y * x)
 mulCommutes       = id
 
-mulUnit          :: Nat (1 :* x) -> Nat x
+mulUnit          :: Nat (1 * x) -> Nat x
 mulUnit           = id
 
-mulZeroAnihL     :: Nat (0 :* x) -> Nat 0
+mulZeroAnihL     :: Nat (0 * x) -> Nat 0
 mulZeroAnihL      = id
 
-subSame          :: Nat a -> ()
-subSame x         = (x .- x) .== zero
+subSame          :: ((a + b) ~ a) => Nat a -> Nat b
+subSame x         = nat :: Nat 0
 
-zeroLeast        :: (a :<= 0) => Nat a -> Nat 0
+zeroLeast        :: (a <= 0) => Nat a -> Nat 0
 zeroLeast         = id
 
-times2           :: Nat (2 :* x) -> Nat (x :+ x)
+times2           :: Nat (2 * x) -> Nat (x + x)
 times2            = id
 
 -- Reports an error
--- times2Odd     :: Nat (x :+ x) -> Nat 5
+-- times2Odd     :: Nat (x + x) -> Nat 5
 -- times2Odd      = id
 
 
-
-
 -- These do not work:
+{-
+zeroMinus        :: ((a + b) ~ 0) => Nat a -> Nat 0
+zeroMinus         = id
 
--- This should get a better type when we add the "a + b = 0" rule.
-zeroMinus x       = zero .- x
+times3           :: Nat (3 * x) -> Nat (x + x + x)
+times3            = id
 
-times3 x          = (nat :: Nat 3) .* x .== (x .+ x .+ x)
+plusAssoc        :: Nat ((x + y) + z) -> Nat (x + (y + z))
+plusAssoc         = id
 
+timesAssoc       :: Nat ((x * y) * z) -> Nat (x * (y * z))
+timesAssoc        = id
 
-plusAssoc x y z   = ((x .+ y) .+ z) .== (x .+ (y .+ z))
-timesAssoc x y z  = ((x .* y) .* z) .== (x .* (y .* z))
-
-distrib x y z     = (x .* (y .+ z)) .== ((x .* y) .+ (x .* z))
+distrib          :: Nat (x * (y + z)) -> Nat ((x * y) + (x * z))
+distrib           = id
+-}
 
 -- [Arithmetic and LEQ]
 -- Things like: a :< (a :+ b)
