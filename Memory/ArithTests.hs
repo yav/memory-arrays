@@ -50,7 +50,7 @@ timesAssoc        = id
 
 distrib          :: Nat (x * (y + z)) -> Nat ((x * y) + (x * z))
 distrib           = id
--}
+--}
 
 -- [Arithmetic and LEQ]
 -- Things like: a :< (a :+ b)
