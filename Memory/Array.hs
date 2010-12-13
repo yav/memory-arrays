@@ -117,7 +117,8 @@ natInt               :: Nat n -> Int
 natInt x              = fromIntegral (natToInteger x)
 
 intNat               :: Int -> (forall n. Nat n -> a) -> a
-intNat x k            = integerToNat (toEnum x) k
+intNat x k            = case toEnum x of
+                          Natural n -> k n
 
 
 {-
