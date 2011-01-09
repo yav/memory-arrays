@@ -11,7 +11,7 @@ addCommutes       = id
 addUnit          :: Nat (0 + x) -> Nat x
 addUnit           = id
 
-mulCommutes      ::  Nat (x * y) -> Nat (y * x)
+mulCommutes      :: Nat (x * y) -> Nat (y * x)
 mulCommutes       = id
 
 mulUnit          :: Nat (1 * x) -> Nat x
@@ -42,9 +42,10 @@ mulBackFD2       :: ((a1 * 5) ~ c, (a2 * 5) ~ c) => Nat a1 -> Nat a2
 mulBackFD2        = id
 
 -- Reports an error
--- times2Odd     :: Nat (x + x) -> Nat 5
--- times2Odd      = id
+-- times2Odd        :: ((x + x) ~ 5) => Nat (x + x) -> Nat 5
+-- times2Odd         = id
 
+{-
 plusAssoc1       :: Nat ((x + y) + z) -> Nat (x + (y + z))
 plusAssoc1        = id
 
@@ -62,6 +63,7 @@ timesAssoc2       = id
 
 timesAC          :: Nat (x * (y * z) * d) -> Nat (d * (z * x) * y)
 timesAC           = id
+-}
 
 {-
 test             :: ((x + c) ~ y, (a + (b + c)) ~ y)
@@ -75,8 +77,8 @@ f _ _ _ = ()
 -- test1             :: (x ~ (a + b)) => Nat a -> Nat b -> Nat x -> ()
 test1 a b x        = f1 a b x
 
-f1 :: ((a + b) ~ x, (x + c) ~ y) => Nat a -> Nat b -> Nat x -> ()
-f1 _ _ _ = ()
+f1 :: ((a + b) ~ x, (x + c) ~ y) => Nat a -> Nat b -> Nat y -> Nat x -> ()
+f1 _ _ _ _ = ()
 
 -- These do not work:
 {-
