@@ -1,10 +1,10 @@
 {-# LANGUAGE TypeNaturals #-}
-module Memory.Bit
+module Data.Bit
   ( Bit
   , natBitSize, numBitSize
   , toList
   , showBin, showHex
-  , split, cat
+  , split, (#)
   , coerceBit
   ) where
 
@@ -15,20 +15,11 @@ import Control.DeepSeq(NFData(..))
 
 newtype Bit (n :: Nat) = B Integer
 
-instance NFData (Bit n) where
-  rnf (B x) = rnf x
-
-rep :: Bit n -> Integer
-rep (B x) = x
-
 natBitSize :: NatI n => Bit n -> Nat n
 natBitSize _ = nat
 
 numBitSize :: (NatI n, Num a) => Bit n -> a
 numBitSize = fromIntegral . natToInteger . natBitSize
-
-norm :: NatI n => Bit n -> Bit n
-norm b@(B n) = B (n .&. ((1 `shiftL` numBitSize b) - 1))
 
 coerceBit :: (NatI a, NatI b) => Bit a -> Maybe (Bit b)
 coerceBit x@(B n) =
@@ -39,7 +30,7 @@ coerceBit x@(B n) =
 
 
 instance Show (Bit n) where
-  showsPrec p = showsPrec p . rep
+  showsPrec p (B x) = showsPrec p x
 
 instance NatI n => Read (Bit n) where
   readsPrec p txt = [ (fromInteger x, cs) | (x,cs) <- readsPrec p txt ]
@@ -89,7 +80,7 @@ showBin = map sh . toList
   where sh x = if x then '1' else '0'
 
 showHex :: NatI n => Bit n -> String
-showHex b = zeros (N.showHex (rep b) "")
+showHex b@(B x) = zeros (N.showHex x "")
   where zeros n = replicate (len - length n) '0' ++ n
         len     = div (bitSize b + 3) 4
 
@@ -98,8 +89,8 @@ split (B x) = (a, b)
   where a = B (x `shiftR` bitSize b)
         b = norm (B x)
 
-cat :: NatI n => Bit m -> Bit n -> Bit (m + n)
-cat (B x) b@(B y) = B (shiftL x (numBitSize b) .|. y)
+(#) :: NatI n => Bit m -> Bit n -> Bit (m + n)
+B x # b@(B y) = B (shiftL x (numBitSize b) .|. y)
 
 instance NatI n => Real (Bit n) where
   toRational (B x) = toRational x
@@ -127,4 +118,9 @@ instance NatI n => Integral (Bit n) where
   quotRem (B x) (B y) = let (a,b) = quotRem x y
                         in (B a, B b)
 
+instance NFData (Bit n) where
+  rnf (B x) = rnf x
+
+norm :: NatI n => Bit n -> Bit n
+norm b@(B n) = B (n .&. ((1 `shiftL` numBitSize b) - 1))
 
