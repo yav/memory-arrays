@@ -1,35 +1,47 @@
 {-# LANGUAGE TypeNaturals #-}
 module Memory.Bit
   ( Bit
-  , natBitSize
+  , natBitSize, numBitSize
   , toList
   , showBin, showHex
   , split, cat
+  , coerceBit
   ) where
 
-import GHC.TypeNats (Nat, TypeNat(..), natToInteger, type (+))
+import GHC.TypeNats (Nat, NatI(..), natToInteger, type (+), checkNat)
 import Data.Bits (Bits(..))
 import qualified Numeric as N
+import Control.DeepSeq(NFData(..))
 
 newtype Bit (n :: Nat) = B Integer
+
+instance NFData (Bit n) where
+  rnf (B x) = rnf x
 
 rep :: Bit n -> Integer
 rep (B x) = x
 
-natBitSize :: TypeNat n => Bit n -> Nat n
+natBitSize :: NatI n => Bit n -> Nat n
 natBitSize _ = nat
 
-numBitSize :: (TypeNat n, Num a) => Bit n -> a
+numBitSize :: (NatI n, Num a) => Bit n -> a
 numBitSize = fromIntegral . natToInteger . natBitSize
 
-norm :: TypeNat n => Bit n -> Bit n
+norm :: NatI n => Bit n -> Bit n
 norm b@(B n) = B (n .&. ((1 `shiftL` numBitSize b) - 1))
+
+coerceBit :: (NatI a, NatI b) => Bit a -> Maybe (Bit b)
+coerceBit x@(B n) =
+  do a <- checkNat (== numBitSize x)
+     return (B n `ofWidth` a)
+  where ofWidth :: Bit n -> Nat n -> Bit n
+        ofWidth x _ = x
 
 
 instance Show (Bit n) where
   showsPrec p = showsPrec p . rep
 
-instance TypeNat n => Read (Bit n) where
+instance NatI n => Read (Bit n) where
   readsPrec p txt = [ (fromInteger x, cs) | (x,cs) <- readsPrec p txt ]
 
 instance Eq (Bit n) where
@@ -38,11 +50,11 @@ instance Eq (Bit n) where
 instance Ord (Bit n) where
   compare (B x) (B y) = compare x y
 
-instance TypeNat n => Bounded (Bit n) where
+instance NatI n => Bounded (Bit n) where
   minBound            = B 0
   maxBound            = norm $ B (-1)
 
-instance TypeNat n => Num (Bit n) where
+instance NatI n => Num (Bit n) where
   B x + B y           = norm $ B (x + y)
   B x - B y           = norm $ B (x - y)
   B x * B y           = norm $ B (x * y)
@@ -51,7 +63,7 @@ instance TypeNat n => Num (Bit n) where
   signum (B x)        = B (signum x)
   fromInteger x       = norm $ B x
 
-instance TypeNat n => Bits (Bit n) where
+instance NatI n => Bits (Bit n) where
   isSigned _          = False
   bitSize             = numBitSize
   B x .&. B y         = B (x .&. y)
@@ -68,27 +80,51 @@ instance TypeNat n => Bits (Bit n) where
     sz = bitSize b
     n  = mod n' sz
 
-toList :: TypeNat n => Bit n -> [Bool]
+toList :: NatI n => Bit n -> [Bool]
 toList b = map (testBit b) [ start, start - 1 .. 0 ]
   where start = numBitSize b - 1 :: Int
 
-showBin :: TypeNat n => Bit n -> String
+showBin :: NatI n => Bit n -> String
 showBin = map sh . toList
   where sh x = if x then '1' else '0'
 
-showHex :: TypeNat n => Bit n -> String
+showHex :: NatI n => Bit n -> String
 showHex b = zeros (N.showHex (rep b) "")
   where zeros n = replicate (len - length n) '0' ++ n
         len     = div (bitSize b + 3) 4
 
-split :: TypeNat n => Bit (m + n) -> (Bit m, Bit n)
+split :: NatI n => Bit (m + n) -> (Bit m, Bit n)
 split (B x) = (a, b)
   where a = B (x `shiftR` bitSize b)
         b = norm (B x)
 
-cat :: TypeNat n => Bit m -> Bit n -> Bit (m + n)
+cat :: NatI n => Bit m -> Bit n -> Bit (m + n)
 cat (B x) b@(B y) = B (shiftL x (numBitSize b) .|. y)
 
+instance NatI n => Real (Bit n) where
+  toRational (B x) = toRational x
 
+instance NatI n => Enum (Bit n) where
+  toEnum x        = norm $ B $ toEnum x
+  fromEnum (B x)  = fromEnum x    -- wraps around
+  succ x          = x + 1
+  pred x          = if x == minBound then maxBound else x - 1
+  enumFrom x      = enumFromTo x maxBound
+  enumFromTo x y
+    | x < y       = enumFromThenTo x (succ x) y
+    | x == y      = [x]
+    | otherwise   = []
+
+  enumFromThen x y = enumFromThenTo x y bound
+      where
+        bound | x <= y    = maxBound
+              | otherwise = minBound
+
+  enumFromThenTo (B x) (B y) (B z) = map B (enumFromThenTo x y z)
+
+instance NatI n => Integral (Bit n) where
+  toInteger (B x) = x
+  quotRem (B x) (B y) = let (a,b) = quotRem x y
+                        in (B a, B b)
 
 
