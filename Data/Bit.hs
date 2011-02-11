@@ -26,7 +26,7 @@ coerceBit x@(B n) =
   do a <- checkNat (== numBitSize x)
      return (B n `ofWidth` a)
   where ofWidth :: Bit n -> Nat n -> Bit n
-        ofWidth x _ = x
+        ofWidth a _ = a
 
 
 instance Show (Bit n) where
